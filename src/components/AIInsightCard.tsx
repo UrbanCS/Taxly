@@ -1,3 +1,4 @@
+// Codex note: example comment added at user's request.
 import React from 'react';
 import { Brain, TrendingUp, AlertTriangle, CheckCircle, Lightbulb } from 'lucide-react';
 
