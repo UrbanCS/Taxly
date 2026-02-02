@@ -1,3 +1,4 @@
+// Codex note: example comment added at user's request.
 import React, { useState } from 'react'
 import { X, Mail, Lock, User, Phone, Building, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react'
 import { supabase } from '../services/supabaseClient' // ← keep this relative path
