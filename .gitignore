@@ -23,3 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Bolt/local tooling artifacts
+.bolt/
+.netlify/
+vite.config.ts.timestamp-*.mjs
+*.tar.gz
+
+# Local scratch files
+/cd
+/wsl
+/tree.txt
