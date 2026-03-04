@@ -5,10 +5,10 @@
 Your Netlify site requires the following environment variables to function properly:
 
 1. **VITE_SUPABASE_URL**
-   - Value: `https://sxizpbdjjyzfgeufrhte.supabase.co`
+   - Value: `https://tyyjluvhujotpdtddipu.supabase.co`
 
 2. **VITE_SUPABASE_ANON_KEY**
-   - Value: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4aXpwYmRqanl6ZmdldWZyaHRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjExNzEsImV4cCI6MjA3NjczNzE3MX0.BouEiUOZm_6LtJu6lR_erA1PZGNmrPw22k7TrYnyjwU`
+   - Value: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5eWpsdXZodWpvdHBkdGRkaXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NTk2MDksImV4cCI6MjA4ODIzNTYwOX0.8dqQD3wkxDEUKGxEMMb5qHkgeU6mTXabpJ6ggwhACtw`
 
 ## How to Set Environment Variables in Netlify
 
