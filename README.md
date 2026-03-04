@@ -136,6 +136,3 @@ Set in Netlify environment variables:
 2. Implement and test changes locally
 3. Open a pull request with a clear summary
 4. Ensure build passes before merge
-
-## License
-Private/internal project. Update this section if you later open-source Taxly.
