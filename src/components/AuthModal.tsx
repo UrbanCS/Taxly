@@ -92,7 +92,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onModeChan
         if (error) {
           setErrors({ general: error.message })
         } else {
-          setSuccessMessage('Account created! Check your email to confirm your address.')
+          const requiresEmailConfirmation = !data.session
+          setSuccessMessage(
+            requiresEmailConfirmation
+              ? 'Account created! Check your email to confirm your address, then sign in.'
+              : 'Account created and signed in successfully!'
+          )
           // Create user object with the form data since Supabase user doesn't include custom fields
           const userWithMetadata = {
             ...data.user,
@@ -102,9 +107,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onModeChan
             businessName: formData.businessName,
             phone: formData.phone
           }
-          onSuccess(userWithMetadata)
-          // keep modal open so they see the message; close if you prefer:
-          // onClose()
+
+          // Only treat signup as authenticated if Supabase actually returned a session.
+          // Otherwise, stay on the auth modal and ask user to confirm email first.
+          if (data.session) {
+            onSuccess(userWithMetadata)
+            onClose()
+          } else {
+            onModeChange('signin')
+          }
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
