@@ -90,6 +90,7 @@ const AccountantDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const [clients, setClients] = useState<Client[]>([]);
+  const [completedTodayCount, setCompletedTodayCount] = useState(0);
   const [, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -108,6 +109,8 @@ const AccountantDashboard = () => {
       if (profilesError) throw profilesError;
 
       if (profiles && profiles.length > 0) {
+        let completedToday = 0;
+
         // Get document counts for each user
         const clientsWithDocs = await Promise.all(
           profiles.map(async (profile) => {
@@ -123,6 +126,10 @@ const AccountantDashboard = () => {
 
             const documentsCount = docs?.length || 0;
             const completedDocs = docs?.filter(d => d.status === 'completed').length || 0;
+            completedToday += docs?.filter((doc) => {
+              if (doc.status !== 'completed' || !doc.created_at) return false;
+              return new Date(doc.created_at).toDateString() === new Date().toDateString();
+            }).length || 0;
             const totalAmount = docs?.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0) || 0;
             const avgConfidence = docs?.length > 0
               ? docs.reduce((sum, d) => sum + (d.confidence || 0), 0) / docs.length
@@ -151,13 +158,16 @@ const AccountantDashboard = () => {
         );
 
         setClients(clientsWithDocs.filter(c => c !== null && c.documentsCount > 0) as Client[]);
+        setCompletedTodayCount(completedToday);
       } else {
         setClients([]);
+        setCompletedTodayCount(0);
       }
     } catch (error) {
       console.error('Error loading clients:', error);
       toast.error('Failed to load client data');
       setClients([]);
+      setCompletedTodayCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -171,7 +181,10 @@ const AccountantDashboard = () => {
   }, [clients]);
 
   const loadReviewItems = async () => {
-    if (clients.length === 0) return;
+    if (clients.length === 0) {
+      setReviewItems([]);
+      return;
+    }
 
     try {
       // Load documents that need review (low confidence or review_needed status)
@@ -217,42 +230,59 @@ const AccountantDashboard = () => {
 
   useEffect(() => {
     loadComplianceAlerts();
-  }, []);
+  }, [clients, reviewItems]);
 
   const loadComplianceAlerts = async () => {
-    const alerts: ComplianceAlert[] = [
-      {
-        id: '1',
+    if (clients.length === 0) {
+      setComplianceAlerts([]);
+      return;
+    }
+
+    const clientsPendingReview = clients.filter((client) => client.completionPercentage < 100);
+    const highRiskClients = clients.filter((client) => client.riskLevel === 'high');
+    const unresolvedReviews = reviewItems.filter((item) => item.status === 'pending' || item.status === 'needs_info');
+
+    const alerts: ComplianceAlert[] = [];
+
+    if (clientsPendingReview.length > 0) {
+      alerts.push({
+        id: 'documents-pending-review',
         type: 'deadline',
-        severity: 'critical',
-        title: 'Q4 Estimated Tax Deadline',
-        description: 'Q4 estimated tax payments due in 3 days. 12 clients still pending.',
-        affectedClients: 12,
-        dueDate: new Date(Date.now() + 3 * 86400000).toISOString(),
+        severity: clientsPendingReview.length > 3 ? 'critical' : 'warning',
+        title: 'Documents Pending Review',
+        description: `${clientsPendingReview.length} client accounts have uploaded documents that still need review or completion.`,
+        affectedClients: clientsPendingReview.length,
         actionRequired: true,
         resolved: false
-      },
-      {
-        id: '2',
-        type: 'regulation',
-        severity: 'warning',
-        title: 'New IRS Regulation Update',
-        description: 'Updated business meal deduction rules effective for 2024 tax year.',
-        affectedClients: 45,
-        actionRequired: true,
-        resolved: false
-      },
-      {
-        id: '3',
+      });
+    }
+
+    if (highRiskClients.length > 0) {
+      alerts.push({
+        id: 'high-risk-clients',
         type: 'audit',
+        severity: 'critical',
+        title: 'High-Risk Client Documents',
+        description: `${highRiskClients.length} client accounts contain low-confidence document analysis and may need manual verification.`,
+        affectedClients: highRiskClients.length,
+        actionRequired: true,
+        resolved: false
+      });
+    }
+
+    if (unresolvedReviews.length > 0) {
+      alerts.push({
+        id: 'unresolved-review-items',
+        type: 'error',
         severity: 'info',
-        title: 'Audit Risk Assessment',
-        description: '3 clients flagged for potential audit risk based on deduction patterns.',
-        affectedClients: 3,
+        title: 'Open Review Queue',
+        description: `${unresolvedReviews.length} document review items are still waiting on accountant action.`,
+        affectedClients: new Set(unresolvedReviews.map((item) => item.clientId)).size,
         actionRequired: false,
         resolved: false
-      }
-    ];
+      });
+    }
+
     setComplianceAlerts(alerts);
   };
 
@@ -288,9 +318,11 @@ const AccountantDashboard = () => {
   const stats = {
     totalClients: clients.length,
     activeReviews: reviewItems.filter(item => item.status === 'pending').length,
-    completedToday: 8,
+    completedToday: completedTodayCount,
     criticalAlerts: complianceAlerts.filter(alert => alert.severity === 'critical' && !alert.resolved).length,
-    avgCompletionRate: Math.round(clients.reduce((sum, client) => sum + client.completionPercentage, 0) / clients.length),
+    avgCompletionRate: clients.length > 0
+      ? Math.round(clients.reduce((sum, client) => sum + client.completionPercentage, 0) / clients.length)
+      : 0,
     totalRefunds: clients.reduce((sum, client) => sum + client.estimatedRefund, 0)
   };
 
