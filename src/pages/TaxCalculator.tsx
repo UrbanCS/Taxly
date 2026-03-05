@@ -38,6 +38,7 @@ type DeductionDraft = {
 const TaxCalculator = () => {
   const { isTestMode, user } = useApp();
   const [income, setIncome] = useState(75000);
+  const [incomeInput, setIncomeInput] = useState('75000');
   const [filingStatus, setFilingStatus] = useState<'single' | 'marriedJoint' | 'marriedSeparate' | 'headOfHousehold'>('single');
   const [state, setState] = useState('CA');
   const [deductions, setDeductions] = useState<Deduction[]>([]);
@@ -124,6 +125,19 @@ const TaxCalculator = () => {
     const normalized = value.replace(/^0+(?=\d)/, '');
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const handleIncomeChange = (rawValue: string) => {
+    const digitsOnly = rawValue.replace(/[^\d]/g, '');
+    if (digitsOnly === '') {
+      setIncomeInput('');
+      setIncome(0);
+      return;
+    }
+
+    const normalized = digitsOnly.replace(/^0+(?=\d)/, '');
+    setIncomeInput(normalized);
+    setIncome(parseNumericInput(normalized));
   };
 
   const removeDeduction = (id: string) => {
@@ -246,11 +260,13 @@ const TaxCalculator = () => {
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
-                      type="number"
-                      value={income}
-                      onChange={(e) => setIncome(parseNumericInput(e.target.value))}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={incomeInput}
+                      onChange={(e) => handleIncomeChange(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
-                      placeholder="75,000"
+                      placeholder="75000"
                     />
                   </div>
                 </div>
