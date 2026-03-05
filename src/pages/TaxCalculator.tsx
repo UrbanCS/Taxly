@@ -13,7 +13,14 @@ import {
   Brain,
   BarChart3
 } from 'lucide-react';
-import { TaxCalculatorService, TaxCalculationResult } from '../services/TaxCalculatorService';
+import {
+  CANADIAN_PROVINCES,
+  FilingStatus,
+  ProvinceCode,
+  TaxYear,
+  TaxCalculatorService,
+  TaxCalculationResult
+} from '../services/TaxCalculatorService';
 import { useApp } from '../contexts/AppContext';
 import { supabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
@@ -39,8 +46,11 @@ const TaxCalculator = () => {
   const { isTestMode, user } = useApp();
   const [income, setIncome] = useState(75000);
   const [incomeInput, setIncomeInput] = useState('75000');
-  const [filingStatus, setFilingStatus] = useState<'single' | 'marriedJoint' | 'marriedSeparate' | 'headOfHousehold'>('single');
-  const [state, setState] = useState('CA');
+  const [taxYear, setTaxYear] = useState<TaxYear>(2026);
+  const [filingStatus, setFilingStatus] = useState<FilingStatus>('single');
+  const [state, setState] = useState<ProvinceCode>('ON');
+  const [dependantIncome, setDependantIncome] = useState(0);
+  const [dependantIncomeInput, setDependantIncomeInput] = useState('0');
   const [deductions, setDeductions] = useState<Deduction[]>([]);
   const [calculation, setCalculation] = useState<TaxCalculationResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -92,7 +102,11 @@ const TaxCalculator = () => {
 
     setTimeout(() => {
       const totalItemizedDeductions = deductions.reduce((sum, d) => sum + d.amount, 0);
-      const result = TaxCalculatorService.calculateTax(income, filingStatus, state, totalItemizedDeductions);
+      const result = TaxCalculatorService.calculateTax(income, filingStatus, state, totalItemizedDeductions, {
+        dependantIncome,
+        hasEmploymentIncome: true,
+        taxYear
+      });
       setCalculation(result);
       setIsCalculating(false);
     }, isTestMode ? 1500 : 100);
@@ -102,7 +116,7 @@ const TaxCalculator = () => {
     if (!isLoadingDocuments) {
       performCalculation();
     }
-  }, [income, filingStatus, state, deductions, isLoadingDocuments]);
+  }, [income, taxYear, filingStatus, state, dependantIncome, deductions, isLoadingDocuments]);
 
   const addDeduction = () => {
     const newDeduction: Deduction = {
@@ -140,9 +154,29 @@ const TaxCalculator = () => {
     setIncome(parseNumericInput(normalized));
   };
 
+  const handleDependantIncomeChange = (rawValue: string) => {
+    const digitsOnly = rawValue.replace(/[^\d]/g, '');
+    if (digitsOnly === '') {
+      setDependantIncomeInput('');
+      setDependantIncome(0);
+      return;
+    }
+
+    const normalized = digitsOnly.replace(/^0+(?=\d)/, '');
+    setDependantIncomeInput(normalized);
+    setDependantIncome(parseNumericInput(normalized));
+  };
+
   const removeDeduction = (id: string) => {
     setDeductions(deductions.filter(d => d.id !== id));
   };
+
+  useEffect(() => {
+    if (filingStatus === 'single') {
+      setDependantIncome(0);
+      setDependantIncomeInput('0');
+    }
+  }, [filingStatus]);
 
   // Get REAL AI suggestions based on income and profession
   const aiSuggestions = TaxCalculatorService.getDeductionSuggestions(income, 'consultant');
@@ -168,6 +202,7 @@ const TaxCalculator = () => {
           name: `Tax Calculation ${new Date().toLocaleDateString()}`,
           filing_status: filingStatus,
           state: state,
+          tax_year: taxYear,
           gross_income: income,
           adjusted_gross_income: calculation.adjustedGrossIncome,
           taxable_income: calculation.taxableIncome,
@@ -196,6 +231,7 @@ const TaxCalculator = () => {
     
     const exportData = {
       calculation,
+      taxYear,
       deductions,
       filingStatus,
       state,
@@ -227,7 +263,7 @@ const TaxCalculator = () => {
               <p className="text-gray-600 text-lg">
                 {isTestMode 
                   ? 'Demo mode - Using real tax calculations with simulated features'
-                  : 'Production-ready tax calculator with 2024 tax brackets and real calculations'
+                  : `Canadian tax estimator using ${taxYear} federal and provincial brackets`
                 }
               </p>
             </div>
@@ -272,6 +308,18 @@ const TaxCalculator = () => {
                 </div>
                 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tax Year</label>
+                  <select
+                    value={taxYear}
+                    onChange={(e) => setTaxYear(Number(e.target.value) as TaxYear)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                  >
+                    <option value={2026}>2026</option>
+                    <option value={2024}>2024</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Filing Status</label>
                   <select
                     value={filingStatus}
@@ -279,27 +327,45 @@ const TaxCalculator = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                   >
                     <option value="single">Single</option>
-                    <option value="marriedJoint">Married Filing Jointly</option>
-                    <option value="marriedSeparate">Married Filing Separately</option>
-                    <option value="headOfHousehold">Head of Household</option>
+                    <option value="commonLaw">Married / Common-Law</option>
+                    <option value="singleParent">Single Parent</option>
                   </select>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Province or Territory</label>
                   <select
                     value={state}
-                    onChange={(e) => setState(e.target.value)}
+                    onChange={(e) => setState(e.target.value as ProvinceCode)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                   >
-                    <option value="CA">California</option>
-                    <option value="NY">New York</option>
-                    <option value="TX">Texas</option>
-                    <option value="FL">Florida</option>
-                    <option value="WA">Washington</option>
-                    <option value="NV">Nevada</option>
+                    {CANADIAN_PROVINCES.map((province) => (
+                      <option key={province.code} value={province.code}>
+                        {province.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
+
+                {filingStatus !== 'single' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {filingStatus === 'commonLaw' ? 'Spouse / Partner Net Income' : 'Eligible Dependant Net Income'}
+                    </label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={dependantIncomeInput}
+                        onChange={(e) => handleDependantIncomeChange(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -489,15 +555,17 @@ const TaxCalculator = () => {
                     <div className="p-4 bg-red-50 rounded-xl">
                       <p className="text-sm font-medium text-red-600">Federal Tax</p>
                       <p className="text-xl font-black text-red-900">${calculation.federalTax.toLocaleString()}</p>
+                      <p className="text-xs text-red-700 mt-1">Credits applied: ${calculation.federalCredits.toLocaleString()}</p>
                     </div>
                     
                     <div className="p-4 bg-orange-50 rounded-xl">
-                      <p className="text-sm font-medium text-orange-600">State Tax</p>
+                      <p className="text-sm font-medium text-orange-600">Provincial Tax</p>
                       <p className="text-xl font-black text-orange-900">${calculation.stateTax.toLocaleString()}</p>
+                      <p className="text-xs text-orange-700 mt-1">Credits applied: ${calculation.provincialCredits.toLocaleString()}</p>
                     </div>
                     
                     <div className="p-4 bg-yellow-50 rounded-xl">
-                      <p className="text-sm font-medium text-yellow-600">FICA Tax</p>
+                      <p className="text-sm font-medium text-yellow-600">{state === 'QC' ? 'QPP / EI / QPIP' : 'CPP / EI'}</p>
                       <p className="text-xl font-black text-yellow-900">${calculation.ficaTax.toLocaleString()}</p>
                     </div>
                     
@@ -543,7 +611,7 @@ const TaxCalculator = () => {
             {/* Tax Breakdown */}
             {calculation && calculation.breakdown && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h4 className="text-lg font-bold text-gray-900 mb-4">Tax Bracket Breakdown</h4>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Federal Tax Bracket Breakdown</h4>
                 <div className="space-y-3">
                   {calculation.breakdown.map((bracket, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
