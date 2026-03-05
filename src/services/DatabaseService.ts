@@ -8,7 +8,7 @@ export interface DatabaseConfig {
 
 export interface QueryOptions {
   select?: string;
-  filter?: Record<string, any>;
+  filter?: Record<string, QueryFilterValue>;
   order?: string;
   limit?: number;
   offset?: number;
@@ -22,6 +22,13 @@ export interface InsertOptions {
 export interface UpdateOptions {
   returning?: string;
 }
+
+type QueryFilterPrimitive = string | number | boolean | null;
+type QueryFilterValue =
+  | QueryFilterPrimitive
+  | QueryFilterPrimitive[]
+  | Record<string, QueryFilterPrimitive>;
+type RowData = Record<string, unknown>;
 
 export class DatabaseService {
   private static config: DatabaseConfig = {
@@ -83,7 +90,7 @@ export class DatabaseService {
   }
 
   // Generic SELECT query
-  public static async select<T = any>(
+  public static async select<T = unknown>(
     table: string, 
     options: QueryOptions = {}
   ): Promise<T[]> {
@@ -109,9 +116,9 @@ export class DatabaseService {
   }
 
   // Generic INSERT query
-  public static async insert<T = any>(
+  public static async insert<T = unknown>(
     table: string, 
-    data: any | any[], 
+    data: RowData | RowData[], 
     options: InsertOptions = {}
   ): Promise<T[]> {
     try {
@@ -149,10 +156,10 @@ export class DatabaseService {
   }
 
   // Generic UPDATE query
-  public static async update<T = any>(
+  public static async update<T = unknown>(
     table: string, 
-    data: any, 
-    filter: Record<string, any>,
+    data: RowData, 
+    filter: Record<string, QueryFilterPrimitive>,
     options: UpdateOptions = {}
   ): Promise<T[]> {
     try {
@@ -191,9 +198,9 @@ export class DatabaseService {
   }
 
   // Generic DELETE query
-  public static async delete<T = any>(
+  public static async delete<T = unknown>(
     table: string, 
-    filter: Record<string, any>
+    filter: Record<string, QueryFilterPrimitive>
   ): Promise<T[]> {
     try {
       const params = new URLSearchParams();
@@ -226,9 +233,9 @@ export class DatabaseService {
   }
 
   // Execute custom SQL function
-  public static async rpc<T = any>(
+  public static async rpc<T = unknown>(
     functionName: string, 
-    params: Record<string, any> = {}
+    params: RowData = {}
   ): Promise<T> {
     try {
       const response = await fetch(`${this.config.url}/rest/v1/rpc/${functionName}`, {
@@ -252,14 +259,14 @@ export class DatabaseService {
   // Get user profile
   public static async getUserProfile(userId: string) {
     return this.select('user_profiles', {
-      filter: { user_id: userId },
+      filter: { id: userId },
       limit: 1
     }).then(results => results[0] || null);
   }
 
   // Update user profile
-  public static async updateUserProfile(userId: string, data: any) {
-    return this.update('user_profiles', data, { user_id: userId });
+  public static async updateUserProfile(userId: string, data: RowData) {
+    return this.update('user_profiles', data, { id: userId });
   }
 
   // Get user documents
@@ -272,7 +279,7 @@ export class DatabaseService {
   }
 
   // Create document
-  public static async createDocument(data: any) {
+  public static async createDocument(data: RowData) {
     return this.insert('documents', data, { returning: '*' });
   }
 
@@ -286,13 +293,14 @@ export class DatabaseService {
   }
 
   // Create client
-  public static async createClient(data: any) {
+  public static async createClient(data: RowData) {
     return this.insert('clients', data, { returning: '*' });
   }
 
   // Get tax returns
   public static async getTaxReturns(userId: string, options: QueryOptions = {}) {
-    return this.select('tax_returns', {
+    // Backward-compatible alias to tax_calculations table.
+    return this.select('tax_calculations', {
       ...options,
       filter: { ...options.filter, user_id: userId },
       order: options.order || 'tax_year.desc'
@@ -300,8 +308,9 @@ export class DatabaseService {
   }
 
   // Create tax return
-  public static async createTaxReturn(data: any) {
-    return this.insert('tax_returns', data, { returning: '*' });
+  public static async createTaxReturn(data: RowData) {
+    // Backward-compatible alias to tax_calculations table.
+    return this.insert('tax_calculations', data, { returning: '*' });
   }
 
   // Get expenses
@@ -314,7 +323,7 @@ export class DatabaseService {
   }
 
   // Create expense
-  public static async createExpense(data: any) {
+  public static async createExpense(data: RowData) {
     return this.insert('expenses', data, { returning: '*' });
   }
 
@@ -328,12 +337,16 @@ export class DatabaseService {
   }
 
   // Create alert
-  public static async createAlert(data: any) {
+  public static async createAlert(data: RowData) {
     return this.insert('alerts', data, { returning: '*' });
   }
 
   // Log user activity
-  public static async logActivity(userId: string, action: string, details: any = {}) {
+  public static async logActivity(
+    userId: string,
+    action: string,
+    details: RowData & { resourceType?: string; resourceId?: string } = {}
+  ) {
     return this.rpc('log_user_activity', {
       p_user_id: userId,
       p_action: action,
@@ -345,7 +358,8 @@ export class DatabaseService {
 
   // Get performance metrics
   public static async getPerformanceMetrics(userId: string, options: QueryOptions = {}) {
-    return this.select('performance_metrics', {
+    // Backward-compatible alias to analytics_data table.
+    return this.select('analytics_data', {
       ...options,
       filter: { ...options.filter, user_id: userId },
       order: options.order || 'period_start.desc'

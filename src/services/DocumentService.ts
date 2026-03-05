@@ -144,7 +144,7 @@ export class DocumentService {
         date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Last 30 days
         vendor,
         category,
-        description: `${vendor} purchase`,
+        description: `${vendor} purchase (${filename})`,
         taxDeductible: Math.random() > 0.3,
         receiptType: category.includes('Meals') ? 'business' : 'business'
       },

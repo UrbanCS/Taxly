@@ -1,49 +1,57 @@
-# Deployment Instructions for Netlify
-
-## Required Environment Variables
-
-Your Netlify site requires the following environment variables to function properly:
-
-1. **VITE_SUPABASE_URL**
-   - Value: `https://tyyjluvhujotpdtddipu.supabase.co`
-
-2. **VITE_SUPABASE_ANON_KEY**
-   - Value: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5eWpsdXZodWpvdHBkdGRkaXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NTk2MDksImV4cCI6MjA4ODIzNTYwOX0.8dqQD3wkxDEUKGxEMMb5qHkgeU6mTXabpJ6ggwhACtw`
-
-## How to Set Environment Variables in Netlify
-
-1. Go to your Netlify dashboard: https://app.netlify.com
-2. Select your site: **whimsical-fox-396af8**
-3. Go to **Site settings**
-4. Navigate to **Environment variables** (in the left sidebar)
-5. Click **Add a variable**
-6. Add each variable:
-   - Key: `VITE_SUPABASE_URL`
-   - Value: (paste the URL above)
-   - Click **Create variable**
-
-   - Key: `VITE_SUPABASE_ANON_KEY`
-   - Value: (paste the key above)
-   - Click **Create variable**
-
-7. **Trigger a new deploy** after adding the variables:
-   - Go to **Deploys** tab
-   - Click **Trigger deploy** > **Clear cache and deploy site**
-
-## Troubleshooting
-
-If the site shows a blank page after deployment:
-
-1. **Check the deploy log** for any build errors
-2. **Verify environment variables** are set correctly (no extra spaces or quotes)
-3. **Clear browser cache** and do a hard refresh (Ctrl+Shift+R or Cmd+Shift+R)
-4. **Check browser console** for errors (F12 > Console tab)
+# Netlify Deployment Guide
 
 ## Build Settings
-
-The correct build settings are already in `netlify.toml`:
+Use these settings for this repository:
 - Build command: `npm run build`
 - Publish directory: `dist`
-- Node version: 18
+- Base directory: (leave blank)
+- Node: 18+
 
-These should be automatically detected by Netlify.
+## Required Environment Variables
+Set these in Netlify for your site:
+
+1. `VITE_SUPABASE_URL`
+   - Example: `https://<your-project-ref>.supabase.co`
+2. `VITE_SUPABASE_ANON_KEY`
+   - Use your Supabase anon/public key
+
+Notes:
+- Do not commit real keys to git.
+- `VITE_*` variables are exposed to the client bundle by design.
+
+## Connect Existing Site to GitHub
+1. Open Netlify site settings.
+2. Go to **Build & deploy**.
+3. Under **Continuous Deployment**, link the GitHub repository.
+4. Use branch `main` for production deploys.
+
+## Apply Env Var Changes
+After adding or updating environment variables:
+1. Go to **Deploys**.
+2. Click **Trigger deploy**.
+3. Choose **Clear cache and deploy site**.
+
+## Supabase Checklist
+Before testing auth/data flows:
+1. Ensure Supabase project is active (not paused).
+2. Run migrations in order:
+   - `supabase/migrations/20251022212436_initial_schema.sql`
+   - `supabase/migrations/20251027194201_fix_security_and_performance_issues.sql`
+3. Configure **Authentication → URL Configuration**:
+   - Site URL: your Netlify production URL
+   - Redirect URLs: production URL and local dev URL (`http://localhost:5173`)
+
+## Verification
+After deployment, verify:
+1. Signup creates an account.
+2. Email confirmation link redirects to valid app URL.
+3. Sign-in succeeds and dashboard data loads.
+4. Browser console shows no `placeholder.supabase.co` usage.
+
+## Common Issues
+- App returns to home after signup:
+  - User likely not confirmed yet; confirm email first.
+- Confirmation link opens `localhost` in production:
+  - Update Supabase Auth URL configuration.
+- Live app still uses placeholder Supabase:
+  - Netlify env var names are wrong or missing (`VITE_SUPABASE_*`).

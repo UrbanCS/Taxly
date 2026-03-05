@@ -9,7 +9,6 @@ import {
   Info, 
   Calendar, 
   Clock,
-  Filter,
   Settings,
   X,
   Eye
@@ -38,6 +37,8 @@ const Alerts = () => {
   }, [user]);
 
   const loadAlerts = async () => {
+    if (!user) return;
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase

@@ -4,31 +4,62 @@ import { useApp } from '../contexts/AppContext';
 import { 
   BarChart3, 
   TrendingUp, 
-  Calendar, 
-  Filter,
   Download,
-  Share,
-  Eye,
   Target,
   DollarSign,
   FileText,
-  Users,
   Clock,
   Award,
   Zap,
   Brain,
   RefreshCw,
-  Settings,
   Maximize,
   Minimize,
-  Play,
-  Pause,
-  RotateCcw
+  X
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart } from 'recharts';
+import type { LucideIcon } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart } from 'recharts';
 import MetricCard from '../components/MetricCard';
 import AIInsightCard from '../components/AIInsightCard';
 import ProgressBar from '../components/ProgressBar';
+
+interface PerformanceDataPoint {
+  month: string;
+  documents: number;
+  accuracy: number;
+  savings: number;
+  efficiency: number;
+  errors: number;
+  clients: number;
+}
+
+interface CategoryBreakdownItem {
+  name: string;
+  value: number;
+  amount: number;
+  color: string;
+  trend: string;
+  count: number;
+}
+
+interface DashboardMetric {
+  title: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down' | 'neutral';
+  icon: LucideIcon;
+  color: 'blue' | 'green' | 'purple' | 'orange' | 'red';
+  description: string;
+}
+
+interface InsightItem {
+  title: string;
+  description: string;
+  type: 'optimization' | 'warning' | 'success' | 'suggestion';
+  priority: 'high' | 'medium' | 'low';
+  impact: string;
+  action: string;
+}
 
 const Analytics = () => {
   const { user } = useApp();
@@ -51,7 +82,7 @@ const Analytics = () => {
     }
   }, []);
 
-  const [performanceData, setPerformanceData] = useState([]);
+  const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
 
   // Load real analytics data
   useEffect(() => {
@@ -61,6 +92,8 @@ const Analytics = () => {
   }, [user, selectedPeriod]);
 
   const loadAnalyticsData = async () => {
+    if (!user) return;
+
     try {
       // Load all documents for this user
       const { data: documents, error: docsError } = await supabase
@@ -121,7 +154,7 @@ const Analytics = () => {
     }
   };
 
-  const [categoryBreakdown, setCategoryBreakdown] = useState([]);
+  const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -130,6 +163,8 @@ const Analytics = () => {
   }, [user]);
 
   const loadCategoryBreakdown = async () => {
+    if (!user) return;
+
     try {
       const { data: documents, error } = await supabase
         .from('documents')
@@ -173,7 +208,7 @@ const Analytics = () => {
     }
   };
 
-  const [aiPerformanceData, setAiPerformanceData] = useState([
+  const [aiPerformanceData] = useState([
     { subject: 'Accuracy', A: 98, B: 85 },
     { subject: 'Speed', A: 95, B: 78 },
     { subject: 'Compliance', A: 97, B: 82 },
@@ -181,11 +216,11 @@ const Analytics = () => {
     { subject: 'User Satisfaction', A: 96, B: 80 }
   ]);
 
-  const [insights, setInsights] = useState([
+  const [insights] = useState<InsightItem[]>([
     {
       title: 'Tax Optimization Opportunity',
       description: 'You could save an additional $2,450 by maximizing retirement contributions',
-      type: 'savings' as const,
+      type: 'optimization',
       priority: 'high' as const,
       impact: '$2,450',
       action: 'Increase 401(k) contributions'
@@ -193,14 +228,14 @@ const Analytics = () => {
     {
       title: 'Deduction Alert',
       description: 'Home office deduction potential identified based on your work patterns',
-      type: 'deduction' as const,
+      type: 'suggestion',
       priority: 'medium' as const,
       impact: '$1,800',
       action: 'Review home office usage'
     }
   ]);
 
-  const [metrics, setMetrics] = useState([]);
+  const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
 
   useEffect(() => {
     if (performanceData.length > 0) {
@@ -457,7 +492,7 @@ const Analytics = () => {
         filename = `analytics-${selectedPeriod}-${Date.now()}.json`;
         mimeType = 'application/json';
         break;
-      case 'csv':
+      case 'csv': {
         const csvHeaders = 'Month,Documents,Accuracy,Savings,Efficiency,Errors,Clients\n';
         const csvData = performanceData.map(row => 
           `${row.month},${row.documents},${row.accuracy},${row.savings},${row.efficiency},${row.errors},${row.clients}`
@@ -466,6 +501,7 @@ const Analytics = () => {
         filename = `analytics-${selectedPeriod}-${Date.now()}.csv`;
         mimeType = 'text/csv';
         break;
+      }
       default: // txt
         content = `Analytics Report - ${selectedPeriod}\n\n` +
                  `Generated: ${new Date().toLocaleString()}\n\n` +
@@ -675,7 +711,7 @@ const Analytics = () => {
                       ].map((chart) => (
                         <button
                           key={chart.type}
-                          onClick={() => setChartType(chart.type as any)}
+                          onClick={() => setChartType(chart.type as 'area' | 'bar' | 'line' | 'composed')}
                           className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                             chartType === chart.type ? 'bg-blue-500 text-white' : 'text-gray-600 hover:text-gray-900'
                           }`}

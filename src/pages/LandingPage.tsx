@@ -10,7 +10,6 @@ import {
   Mail, 
   BarChart3, 
   Clock,
-  CheckCircle,
   Star,
   Users,
   TrendingUp,
@@ -22,13 +21,9 @@ import {
   Rocket,
   ChevronRight,
   Upload,
-  Eye,
   DollarSign,
   Calculator,
-  Smartphone,
   Monitor,
-  MousePointer,
-  Layers,
   Database,
   Cpu,
   Lightbulb
@@ -47,7 +42,7 @@ const LandingPage = () => {
     setShowAuthModal(true);
   };
 
-  const handleAuthSuccess = (user: any) => {
+  const handleAuthSuccess = () => {
     setShowAuthModal(false);
     // Redirect to dashboard after successful signup/login
     window.location.href = '/dashboard';
@@ -739,6 +734,7 @@ const LandingPage = () => {
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
           mode={authMode}
+          onModeChange={setAuthMode}
           onSuccess={handleAuthSuccess}
         />
       )}

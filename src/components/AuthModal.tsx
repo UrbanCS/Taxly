@@ -8,7 +8,7 @@ interface AuthModalProps {
   onClose: () => void;
   mode: 'signin' | 'signup';
   onModeChange: (mode: 'signin' | 'signup') => void;
-  onSuccess: (user: any) => void;
+  onSuccess: (user: unknown) => void;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onModeChange, onSuccess }) => {
@@ -49,7 +49,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onModeChan
       if (!formData.firstName.trim()) newErrors.firstName = 'First name is required'
       if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required'
 
-      if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone))
+      if (formData.phone && !/^\+?[\d\s\-()]+$/.test(formData.phone))
         newErrors.phone = 'Please enter a valid phone number'
 
       if (formData.userRole === 'accountant' && !formData.businessName.trim())

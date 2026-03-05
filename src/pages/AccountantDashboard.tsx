@@ -12,37 +12,24 @@ import {
   TrendingUp,
   Eye,
   Edit,
-  Download,
   Filter,
   Search,
   MoreVertical,
   Calendar,
   Target,
-  Award,
-  Zap,
-  Brain,
   BarChart3,
   RefreshCw,
-  Bell,
-  Settings,
-  User,
   Building,
   Calculator,
-  Lightbulb,
   Flag,
   CheckSquare,
   XCircle,
   MessageSquare,
   Phone,
   Mail,
-  MapPin,
-  Star,
   ThumbsUp,
   ThumbsDown,
-  Archive,
-  Send,
-  Plus,
-  Minus
+  Plus
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 
@@ -98,13 +85,12 @@ interface ComplianceAlert {
 const AccountantDashboard = () => {
   const { isTestMode } = useApp();
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadClientsData();
@@ -227,60 +213,6 @@ const AccountantDashboard = () => {
     }
   };
 
-  const _placeholderReviewItems = [
-    {
-      id: '1',
-      clientId: '1',
-      clientName: 'Sarah Johnson',
-      type: 'deduction',
-      title: 'Home Office Deduction Verification',
-      description: 'Client claims $4,200 home office deduction. Requires verification of exclusive business use.',
-      status: 'pending',
-      priority: 'high',
-      submittedDate: '2025-01-15T10:30:00Z',
-      dueDate: '2025-01-17T17:00:00Z',
-      amount: 4200,
-      confidence: 87,
-      flags: ['High amount', 'Documentation needed'],
-      assignedTo: 'John Smith',
-      notes: ['Client provided floor plan', 'Need utility bills for verification']
-    },
-    {
-      id: '2',
-      clientId: '2',
-      clientName: 'Michael Chen',
-      type: 'document',
-      title: 'Receipt OCR Verification',
-      description: 'AI extracted $1,247 from business meal receipt. Confidence: 94%',
-      status: 'approved',
-      priority: 'medium',
-      submittedDate: '2025-01-15T09:15:00Z',
-      dueDate: '2025-01-16T17:00:00Z',
-      amount: 1247,
-      confidence: 94,
-      flags: [],
-      assignedTo: 'Jane Doe',
-      notes: ['Receipt clear and legible', 'Business purpose documented']
-    },
-    {
-      id: '3',
-      clientId: '3',
-      clientName: 'Emily Rodriguez',
-      type: 'compliance',
-      title: 'International Income Reporting',
-      description: 'Complex international income structure requires additional forms and compliance review.',
-      status: 'needs_info',
-      priority: 'urgent',
-      submittedDate: '2025-01-14T16:45:00Z',
-      dueDate: '2025-01-16T12:00:00Z',
-      flags: ['FBAR required', 'Form 8938', 'Tax treaty considerations'],
-      assignedTo: 'John Smith',
-      notes: ['Requested additional documentation', 'Consulting with international tax specialist']
-    }
-  ];
-
-  // Remove placeholder
-
   const [complianceAlerts, setComplianceAlerts] = useState<ComplianceAlert[]>([]);
 
   useEffect(() => {
@@ -323,42 +255,6 @@ const AccountantDashboard = () => {
     ];
     setComplianceAlerts(alerts);
   };
-
-  const _placeholderComplianceAlerts = [
-    {
-      id: '1',
-      type: 'deadline',
-      severity: 'critical',
-      title: 'Q4 Estimated Tax Deadline',
-      description: 'Q4 estimated tax payments due in 3 days. 12 clients still pending.',
-      affectedClients: 12,
-      dueDate: '2025-01-15T23:59:59Z',
-      actionRequired: true,
-      resolved: false
-    },
-    {
-      id: '2',
-      type: 'regulation',
-      severity: 'warning',
-      title: 'New IRS Regulation Update',
-      description: 'Updated business meal deduction rules effective for 2024 tax year.',
-      affectedClients: 45,
-      actionRequired: true,
-      resolved: false
-    },
-    {
-      id: '3',
-      type: 'audit',
-      severity: 'info',
-      title: 'Audit Risk Assessment',
-      description: '3 clients flagged for potential audit risk based on deduction patterns.',
-      affectedClients: 3,
-      actionRequired: false,
-      resolved: false
-    }
-  ];
-
-  // Remove placeholder
 
   const handleRefresh = async () => {
     setRefreshing(true);

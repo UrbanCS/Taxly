@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   User,
   Shield,
@@ -14,26 +14,20 @@ import {
   Building,
   Globe,
   Lock,
-  Smartphone,
-  Key,
   AlertTriangle,
-  Check,
-  X,
   Settings as SettingsIcon,
-  Palette,
   Moon,
   Sun,
   Monitor,
   Database,
   Loader
 } from 'lucide-react';
-import { AppContext } from '../contexts/AppContext';
+import { useApp } from '../contexts/AppContext';
 import { SeedService } from '../services/SeedService';
 
 const Settings = () => {
-  const { user, updateUser } = useContext(AppContext);
+  const { user, updateUser } = useApp();
   const [activeTab, setActiveTab] = useState('profile');
-  const [showPassword, setShowPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -78,13 +72,16 @@ const Settings = () => {
   });
 
   const handleSaveProfile = async () => {
+    if (!user) {
+      return;
+    }
+
     setSaving(true);
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     updateUser({
-      ...user,
       firstName: profileData.firstName,
       lastName: profileData.lastName,
       email: profileData.email

@@ -2,14 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { useApp } from '../contexts/AppContext';
 import toast from 'react-hot-toast';
-import { Mail, Plus, FolderSync as Sync, Settings, Trash2, CheckCircle, AlertCircle, Clock, FileText, Download, Eye, Filter, Search, Calendar, Tag, Archive, Star, Paperclip, User, Building, Globe, Shield, Zap, RefreshCw, X } from 'lucide-react';
+import { Mail, Plus, FolderSync as Sync, Trash2, CheckCircle, AlertCircle, Clock, Download, Eye, Search, Calendar, Paperclip, User, Shield, Zap, RefreshCw, X } from 'lucide-react';
+
+interface ConnectedAccount {
+  id: string;
+  email: string;
+  provider: string;
+  status: string;
+  lastSync: string;
+  documentsFound: number;
+  autoSync: boolean;
+  folders: string[];
+}
+
+interface EmailDocument {
+  id: string;
+  subject: string;
+  sender: string;
+  date: string;
+  attachments: number;
+  category: string;
+  amount: number;
+  processed: boolean;
+  confidence: number;
+  tags: string[];
+}
 
 const EmailIntegration = () => {
   const { user } = useApp();
-  const [connectedAccounts, setConnectedAccounts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([]);
+  const [, setIsLoading] = useState(true);
 
-  const [emailDocuments, setEmailDocuments] = useState([]);
+  const [emailDocuments, setEmailDocuments] = useState<EmailDocument[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -85,7 +109,7 @@ const EmailIntegration = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState<EmailDocument | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [syncing, setSyncing] = useState(false);
@@ -116,7 +140,7 @@ const EmailIntegration = () => {
 
     try {
       // Insert new email account
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('email_accounts')
         .insert({
           user_id: user.id,
@@ -145,7 +169,7 @@ const EmailIntegration = () => {
     }
   };
 
-  const handleSyncAccount = async (accountId) => {
+  const handleSyncAccount = async (accountId: string) => {
     if (!user) return;
 
     setSyncing(true);
@@ -185,7 +209,7 @@ const EmailIntegration = () => {
     }
   };
 
-  const handleRemoveAccount = async (accountId) => {
+  const handleRemoveAccount = async (accountId: string) => {
     if (!window.confirm('Are you sure you want to remove this email account?')) return;
 
     try {
@@ -204,32 +228,32 @@ const EmailIntegration = () => {
     }
   };
 
-  const handleViewDocument = (document) => {
+  const handleViewDocument = (document: EmailDocument) => {
     setSelectedDocument(document);
     setShowDocumentModal(true);
   };
 
-  const handleDownloadDocument = (document) => {
+  const handleDownloadDocument = (documentData: EmailDocument) => {
     // Simulate document download
-    const content = `Document: ${document.subject}\nSender: ${document.sender}\nDate: ${document.date}\nAmount: $${document.amount}\nCategory: ${document.category}\nTags: ${document.tags.join(', ')}`;
+    const content = `Document: ${documentData.subject}\nSender: ${documentData.sender}\nDate: ${documentData.date}\nAmount: $${documentData.amount}\nCategory: ${documentData.category}\nTags: ${documentData.tags.join(', ')}`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = window.document.createElement('a');
     a.href = url;
-    a.download = `${document.subject.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
-    document.body.appendChild(a);
+    a.download = `${documentData.subject.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const handleProcessDocument = async (documentId) => {
+  const handleProcessDocument = async (documentId: string) => {
     setSyncing(true);
     
     // Simulate AI processing
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    setEmailDocuments(docs => 
+    setEmailDocuments(docs =>
       docs.map(doc => 
         doc.id === documentId 
           ? { ...doc, processed: true, confidence: Math.floor(Math.random() * 10) + 90 }

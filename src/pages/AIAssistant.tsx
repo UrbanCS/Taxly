@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  MessageCircle, 
   Send, 
   Bot, 
   User, 
@@ -12,13 +11,9 @@ import {
   BarChart3,
   Lightbulb,
   Clock,
-  CheckCircle,
-  AlertTriangle,
   Zap,
   Brain,
-  Sparkles,
   TrendingUp,
-  DollarSign,
   Shield
 } from 'lucide-react';
 

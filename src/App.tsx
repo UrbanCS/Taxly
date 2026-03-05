@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './contexts/AppContext';
 import Header from './components/Header';
@@ -28,7 +28,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Component to handle URL parameters
 const AppContent = () => {
-  const { isAuthenticated, user, isLoading } = useApp();
+  const { isAuthenticated, user } = useApp();
   const location = useLocation();
   const [initializing, setInitializing] = React.useState(true);
 
@@ -66,7 +66,7 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header isAuthenticated={isAuthenticated} setIsAuthenticated={() => {}} />
+      <Header />
       <Routes>
         <Route
           path="/"

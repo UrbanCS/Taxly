@@ -18,19 +18,14 @@ import {
   Target,
   Award,
   RefreshCw,
-  Filter,
   Search,
-  MoreVertical,
   Edit,
   Trash2,
   Play,
   Pause,
   RotateCcw,
   Share,
-  Star,
   Tag,
-  Calendar,
-  DollarSign
 } from 'lucide-react';
 
 interface UploadedFile {
@@ -66,7 +61,7 @@ const DocumentUpload = () => {
   const [isProcessingPaused, setIsProcessingPaused] = useState(false);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [showFileModal, setShowFileModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
@@ -245,7 +240,7 @@ const DocumentUpload = () => {
         }
         break;
       case 'reprocess':
-        toast.info('Bulk reprocessing is not available in this version');
+        toast('Bulk reprocessing is not available in this version');
         break;
       case 'approve':
         setUploadedFiles(prev => prev.map(f => 
@@ -315,7 +310,7 @@ const DocumentUpload = () => {
     setUploadedFiles(prev => prev.map(f =>
       f.id === file.id ? { ...f, status: 'processing' } : f
     ));
-    toast.info('Reprocessing is currently not available in this version');
+    toast('Reprocessing is currently not available in this version');
   };
 
   const shareFile = (file: UploadedFile) => {
@@ -356,7 +351,7 @@ const DocumentUpload = () => {
 
   const resumeProcessing = () => {
     setIsProcessingPaused(false);
-    toast.info('Resume processing is currently not available in this version');
+    toast('Resume processing is currently not available in this version');
   };
 
   const clearQueue = () => {

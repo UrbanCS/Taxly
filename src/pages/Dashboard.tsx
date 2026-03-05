@@ -8,30 +8,23 @@ import {
   FileText, 
   AlertTriangle, 
   CheckCircle, 
-  TrendingUp, 
   Calendar,
   DollarSign,
   Users,
   Clock,
-  Upload,
   Eye,
   Download,
   Filter,
   RefreshCw,
-  Zap,
-  Target,
-  Award,
   ArrowUp,
   ArrowDown,
-  Activity,
   Edit,
   Trash2,
-  MoreVertical,
   Search,
   X,
   Plus
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 
 interface Document {
   id: string;
@@ -50,6 +43,23 @@ interface Alert {
   priority: string;
   action: string;
   time: string;
+}
+
+interface MonthlyDataPoint {
+  month: string;
+  processed: number;
+  pending: number;
+  revenue: number;
+  expenses: number;
+  profit: number;
+}
+
+interface ExpenseDataPoint {
+  name: string;
+  value: number;
+  color: string;
+  percentage: number;
+  change: string;
 }
 
 const Dashboard = () => {
@@ -75,7 +85,7 @@ const Dashboard = () => {
   }, []);
 
   // Real data from Supabase
-  const [monthlyData, setMonthlyData] = useState([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyDataPoint[]>([]);
   const [recentDocuments, setRecentDocuments] = useState<Document[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
@@ -87,6 +97,8 @@ const Dashboard = () => {
   }, [user]);
 
   const loadDashboardData = async () => {
+    if (!user) return;
+
     setIsLoading(true);
     try {
       // Load documents
@@ -183,7 +195,7 @@ const Dashboard = () => {
       // Calculate percentages
       const total = expenseArray.reduce((sum, exp) => sum + exp.value, 0);
       expenseArray.forEach(exp => {
-        exp.percentage = ((exp.value / total) * 100).toFixed(1);
+        exp.percentage = total > 0 ? Number(((exp.value / total) * 100).toFixed(1)) : 0;
       });
 
       setExpenseData(expenseArray);
@@ -200,7 +212,7 @@ const Dashboard = () => {
     }
   };
 
-  const [expenseData, setExpenseData] = useState([]);
+  const [expenseData, setExpenseData] = useState<ExpenseDataPoint[]>([]);
 
   // WORKING REFRESH FUNCTIONALITY
   const handleRefresh = async () => {

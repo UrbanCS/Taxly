@@ -22,12 +22,7 @@ import AuthModal from './AuthModal';
 import { supabase } from '../services/supabaseClient';
 import { useApp } from '../contexts/AppContext';
 
-interface HeaderProps {
-  isAuthenticated: boolean;
-  setIsAuthenticated: (auth: boolean) => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ isAuthenticated: _isAuthenticated, setIsAuthenticated: _setIsAuthenticated }) => {
+const Header: React.FC = () => {
   const { isAuthenticated, user: currentUser } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -60,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated: _isAuthenticated, setI
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleAuthSuccess = (user: any) => {
+  const handleAuthSuccess = () => {
     setShowAuthModal(false);
   };
 
@@ -167,10 +162,10 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated: _isAuthenticated, setI
                       </div>
                       <div className="text-left">
                         <p className="text-sm font-semibold text-secondary-900">
-                          {currentUser?.user_metadata?.firstName && currentUser?.user_metadata?.lastName
-                            ? `${currentUser.user_metadata.firstName} ${currentUser.user_metadata.lastName}`
+                          {currentUser?.firstName && currentUser?.lastName
+                            ? `${currentUser.firstName} ${currentUser.lastName}`
                             : currentUser?.email?.split('@')[0] || 'User'}
-                          {currentUser?.user_metadata?.userRole === 'accountant' ? ' - Professional' : ' - Premium Plan'}
+                          {currentUser?.userRole === 'accountant' ? ' - Professional' : ' - Premium Plan'}
                         </p>
                       </div>
                       <ChevronDown className="w-4 h-4 text-secondary-400" />
@@ -180,8 +175,8 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated: _isAuthenticated, setI
                       <div className="absolute right-0 mt-2 w-56 glass-effect rounded-2xl shadow-large border border-primary-100 py-2 animate-scale-in">
                         <div className="px-4 py-3 border-b border-primary-100">
                           <p className="text-sm font-semibold text-secondary-900">
-                            {currentUser?.user_metadata?.firstName && currentUser?.user_metadata?.lastName
-                              ? `${currentUser.user_metadata.firstName} ${currentUser.user_metadata.lastName}`
+                            {currentUser?.firstName && currentUser?.lastName
+                              ? `${currentUser.firstName} ${currentUser.lastName}`
                               : currentUser?.email?.split('@')[0] || 'User'}
                           </p>
                           <p className="text-xs text-secondary-500">
@@ -302,8 +297,8 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated: _isAuthenticated, setI
                     <>
                       <div className="px-4 py-3 bg-primary-50 rounded-2xl">
                         <p className="text-sm font-semibold text-secondary-900">
-                          {currentUser?.user_metadata?.firstName && currentUser?.user_metadata?.lastName
-                            ? `${currentUser.user_metadata.firstName} ${currentUser.user_metadata.lastName}`
+                          {currentUser?.firstName && currentUser?.lastName
+                            ? `${currentUser.firstName} ${currentUser.lastName}`
                             : currentUser?.email?.split('@')[0] || 'User'}
                         </p>
                         <p className="text-xs text-secondary-500">{currentUser?.email}</p>

@@ -2,20 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   Calculator, 
   DollarSign, 
-  TrendingUp, 
   FileText, 
   Save, 
   Download,
   Lightbulb,
   AlertTriangle,
   CheckCircle,
-  Info,
   Plus,
   Minus,
-  Percent,
-  Target,
-  Award,
-  Zap,
   Brain,
   BarChart3
 } from 'lucide-react';
@@ -33,6 +27,13 @@ interface Deduction {
   fromDocument?: boolean;
   documentId?: string;
 }
+
+type DeductionDraft = {
+  name: string;
+  amount: number;
+  category: string;
+  fromDocument?: boolean;
+};
 
 const TaxCalculator = () => {
   const { isTestMode, user } = useApp();
@@ -112,7 +113,7 @@ const TaxCalculator = () => {
     setDeductions([...deductions, newDeduction]);
   };
 
-  const updateDeduction = (id: string, field: string, value: any) => {
+  const updateDeduction = <K extends keyof Deduction>(id: string, field: K, value: Deduction[K]) => {
     setDeductions(deductions.map(d => 
       d.id === id ? { ...d, [field]: value } : d
     ));
@@ -129,7 +130,7 @@ const TaxCalculator = () => {
     if (!calculation || !user) return;
 
     try {
-      const deductionsData = deductions.reduce((acc, d) => {
+      const deductionsData = deductions.reduce<Record<string, DeductionDraft>>((acc, d) => {
         acc[d.id] = {
           name: d.name,
           amount: d.amount,
@@ -137,7 +138,7 @@ const TaxCalculator = () => {
           fromDocument: d.fromDocument
         };
         return acc;
-      }, {} as Record<string, any>);
+      }, {});
 
       const { error } = await supabase
         .from('tax_calculations')
@@ -251,7 +252,7 @@ const TaxCalculator = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Filing Status</label>
                   <select
                     value={filingStatus}
-                    onChange={(e) => setFilingStatus(e.target.value as any)}
+                    onChange={(e) => setFilingStatus(e.target.value as typeof filingStatus)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                   >
                     <option value="single">Single</option>

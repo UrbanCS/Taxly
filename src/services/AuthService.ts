@@ -101,7 +101,7 @@ export class AuthService {
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', authData.user.id)
+        .eq('id', authData.user.id)
         .maybeSingle();
 
       const user: User = {
@@ -158,7 +158,7 @@ export class AuthService {
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', authUser.id)
+        .eq('id', authUser.id)
         .maybeSingle();
 
       return {
@@ -215,7 +215,7 @@ export class AuthService {
           user_role: updates.userRole,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .select()
         .single();
 
