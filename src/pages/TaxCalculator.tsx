@@ -119,6 +119,13 @@ const TaxCalculator = () => {
     ));
   };
 
+  const parseNumericInput = (value: string): number => {
+    if (value.trim() === '') return 0;
+    const normalized = value.replace(/^0+(?=\d)/, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
   const removeDeduction = (id: string) => {
     setDeductions(deductions.filter(d => d.id !== id));
   };
@@ -241,7 +248,7 @@ const TaxCalculator = () => {
                     <input
                       type="number"
                       value={income}
-                      onChange={(e) => setIncome(Number(e.target.value))}
+                      onChange={(e) => setIncome(parseNumericInput(e.target.value))}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
                       placeholder="75,000"
                     />
@@ -342,7 +349,7 @@ const TaxCalculator = () => {
                           <input
                             type="number"
                             value={deduction.amount}
-                            onChange={(e) => updateDeduction(deduction.id, 'amount', Number(e.target.value))}
+                            onChange={(e) => updateDeduction(deduction.id, 'amount', parseNumericInput(e.target.value))}
                             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="0"
                           />
