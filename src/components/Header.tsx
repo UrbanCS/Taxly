@@ -53,6 +53,14 @@ const Header: React.FC = () => {
     { name: 'Alerts', href: '/alerts', icon: Bell },
   ];
 
+  const visibleNavigation = navigation.filter((item) => {
+    if (item.href !== '/accountant') {
+      return true;
+    }
+
+    return currentUser?.userRole === 'accountant' || currentUser?.userRole === 'admin';
+  });
+
   const isActive = (path: string) => location.pathname === path;
 
   const handleAuthSuccess = () => {
@@ -117,7 +125,7 @@ const Header: React.FC = () => {
             {/* Desktop Navigation */}
             {isAuthenticated && (
               <nav className="hidden lg:flex items-center space-x-2">
-                {navigation.map((item) => (
+                {visibleNavigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
@@ -254,7 +262,7 @@ const Header: React.FC = () => {
               )}
 
               <div className="flex flex-col space-y-2">
-                {isAuthenticated && navigation.map((item) => (
+                {isAuthenticated && visibleNavigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}

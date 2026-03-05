@@ -16,11 +16,21 @@ import AIAssistant from './pages/AIAssistant';
 import AccountantDashboard from './pages/AccountantDashboard';
 
 // Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useApp();
+const ProtectedRoute = ({
+  children,
+  allowedRoles
+}: {
+  children: React.ReactNode;
+  allowedRoles?: Array<'individual' | 'accountant' | 'admin'>;
+}) => {
+  const { isAuthenticated, user } = useApp();
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
+  }
+
+  if (allowedRoles && (!user || !allowedRoles.includes(user.userRole))) {
+    return <Navigate to={user?.userRole === 'accountant' ? '/accountant' : '/dashboard'} replace />;
   }
 
   return <>{children}</>;
@@ -73,7 +83,14 @@ const AppContent = () => {
           element={isAuthenticated ? <Navigate to={user?.userRole === 'accountant' ? '/accountant' : '/dashboard'} replace /> : <LandingPage />}
         />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/accountant" element={<ProtectedRoute><AccountantDashboard /></ProtectedRoute>} />
+        <Route
+          path="/accountant"
+          element={
+            <ProtectedRoute allowedRoles={['accountant', 'admin']}>
+              <AccountantDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/upload" element={<ProtectedRoute><DocumentUpload /></ProtectedRoute>} />
         <Route path="/email" element={<ProtectedRoute><EmailIntegration /></ProtectedRoute>} />
         <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
