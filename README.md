@@ -33,6 +33,12 @@ Tax prep teams spend too much time on repetitive work: collecting files, extract
 - Supabase Row-Level Security (RLS)
 - Supabase Storage-ready architecture
 
+### AI and Automation
+- OpenAI for tax summaries, extraction, and workflow assistance
+- OCR pipeline planned with AWS Textract, Google Vision, or Tesseract fallback
+- Email ingestion pipeline planned with Mailparser / IMAP-based processing
+- Server-side AI processing planned via Supabase Edge Functions or serverless functions
+
 ### Deployment
 - Netlify (GitHub-connected production deploys)
 
@@ -42,6 +48,10 @@ React + Vite (Client)
         |
         v
 Supabase (Auth + Postgres + RLS + Storage)
+        |
+        v
+AI Processing Layer (Planned)
+OpenAI + OCR + Email Parsing
         |
         v
 Analytics / Alerts / Document & Tax Workflows
@@ -113,7 +123,8 @@ Set in Netlify environment variables:
 ## Current Status
 - Frontend is live and deployable from GitHub to Netlify.
 - Supabase migrations are available for fresh project setup.
-- Some strict TypeScript/lint debt remains and can be resolved iteratively.
+- Core TypeScript and lint issues have been stabilized.
+- AI, OCR, and email ingestion layers are part of the planned architecture and are not yet fully implemented in production.
 
 ## Roadmap
 ### Phase 1 (Stabilization)
