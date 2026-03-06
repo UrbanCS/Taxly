@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { useApp } from '../contexts/AppContext';
+import { DocumentService } from '../services/DocumentService';
 import toast from 'react-hot-toast';
 import { 
   Upload, 
@@ -35,6 +36,7 @@ interface UploadedFile {
   type: string;
   status: 'processing' | 'completed' | 'error' | 'reviewing';
   uploadTime: string;
+  filePath?: string;
   processingTime?: number;
   extractedData?: {
     amount?: string;
@@ -43,9 +45,11 @@ interface UploadedFile {
     category?: string;
     taxDeductible?: boolean;
     confidence?: number;
+    description?: string;
   };
   aiInsights?: string[];
   tags?: string[];
+  textSnippet?: string;
 }
 
 const DocumentUpload = () => {
@@ -91,14 +95,19 @@ const DocumentUpload = () => {
         type: doc.file_type || 'application/pdf',
         status: doc.status === 'review_needed' ? 'reviewing' : (doc.status || 'processing') as 'processing' | 'completed' | 'error' | 'reviewing',
         uploadTime: doc.created_at,
+        filePath: doc.file_path || undefined,
         extractedData: {
-          amount: doc.amount ? `$${doc.amount}` : undefined,
+          amount: doc.amount ? `$${Number(doc.amount).toFixed(2)}` : undefined,
           date: doc.transaction_date,
           vendor: doc.vendor,
           category: doc.category,
-          confidence: doc.confidence
+          confidence: doc.confidence,
+          description: doc.description,
+          taxDeductible: doc.tax_deductible
         },
-        tags: []
+        aiInsights: doc.extracted_data?.aiInsights || [],
+        tags: doc.extracted_data?.tags || [],
+        textSnippet: doc.extracted_data?.textSnippet || ''
       }));
 
       setUploadedFiles(formattedFiles);
@@ -136,7 +145,13 @@ const DocumentUpload = () => {
       return;
     }
 
-    Array.from(files).forEach(async (file) => {
+    for (const file of Array.from(files)) {
+      const validation = DocumentService.validateFile(file);
+      if (!validation.valid) {
+        toast.error(validation.error || `Unsupported file: ${file.name}`);
+        continue;
+      }
+
       const tempId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
       const newFile: UploadedFile = {
         id: tempId,
@@ -154,66 +169,43 @@ const DocumentUpload = () => {
       if (!isProcessingPaused) {
         await processFile(tempId, file);
       }
-    });
+    }
   };
 
   const processFile = async (tempId: string, file: File) => {
     try {
-      const processingTime = Math.random() * 10 + 2;
-      const confidence = Math.floor(Math.random() * 20) + 80;
-      const amount = (Math.random() * 500 + 10).toFixed(2);
-      const date = new Date().toISOString().split('T')[0];
-      const vendor = 'AI-Detected Vendor';
-      const category = 'Business Expense';
-
-      await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
-
-      const { data: docData, error: docError } = await supabase
-        .from('documents')
-        .insert({
-          user_id: user!.id,
-          filename: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          amount: parseFloat(amount),
-          transaction_date: date,
-          vendor: vendor,
-          category: category,
-          status: confidence > 90 ? 'completed' : 'processing',
-          confidence: confidence
-        })
-        .select()
-        .single();
-
-      if (docError) throw docError;
+      const processed = await DocumentService.processAndStoreDocument(file, user!.id);
 
       setUploadedFiles(prev => prev.map(f =>
         f.id === tempId
           ? {
               ...f,
-              id: docData.id,
-              status: confidence > 90 ? 'completed' : 'reviewing',
-              processingTime,
+              id: processed.id,
+              status: processed.status === 'review_needed' ? 'reviewing' : processed.status,
+              filePath: processed.filePath,
+              processingTime: processed.processingTime,
               extractedData: {
-                amount: '$' + amount,
-                date: date,
-                vendor: vendor,
-                category: category,
-                taxDeductible: Math.random() > 0.3,
-                confidence
+                amount: processed.extractedData?.amount !== undefined ? `$${processed.extractedData.amount.toFixed(2)}` : undefined,
+                date: processed.extractedData?.date?.toISOString().split('T')[0],
+                vendor: processed.extractedData?.vendor,
+                category: processed.extractedData?.category,
+                taxDeductible: processed.extractedData?.taxDeductible,
+                confidence: processed.confidence,
+                description: processed.extractedData?.description
               },
-              aiInsights: [
-                confidence > 95 ? 'High confidence extraction' : 'Medium confidence - review recommended',
-                'All required fields detected',
-                Math.random() > 0.5 ? 'Tax deductible expense' : 'Personal expense detected'
-              ],
-              tags: ['auto-generated', 'ai-processed']
+              aiInsights: processed.aiInsights || [],
+              tags: processed.tags || [],
+              textSnippet: processed.textSnippet
             }
           : f
       ));
 
       setProcessingQueue(prev => prev.filter(id => id !== tempId));
-      toast.success(`${file.name} processed successfully!`);
+      toast.success(
+        processed.status === 'error'
+          ? `${file.name} uploaded, but extraction needs review`
+          : `${file.name} processed successfully!`
+      );
     } catch (error) {
       console.error('Error processing file:', error);
       setUploadedFiles(prev => prev.map(f =>
@@ -259,20 +251,42 @@ const DocumentUpload = () => {
   };
 
   const downloadFile = (file: UploadedFile) => {
-    const element = document.createElement('a');
-    const fileContent = `Document: ${file.name}\nType: ${file.type}\nSize: ${formatFileSize(file.size)}\nStatus: ${file.status}\nUpload Time: ${formatTime(file.uploadTime)}${
-      file.extractedData ? `\n\nExtracted Data:\nAmount: ${file.extractedData.amount}\nDate: ${file.extractedData.date}\nVendor: ${file.extractedData.vendor}\nCategory: ${file.extractedData.category}\nTax Deductible: ${file.extractedData.taxDeductible ? 'Yes' : 'No'}\nConfidence: ${file.extractedData.confidence}%` : ''
-    }${
-      file.aiInsights ? `\n\nAI Insights:\n${file.aiInsights.join('\n')}` : ''
-    }`;
-    
-    const blob = new Blob([fileContent], { type: 'text/plain' });
-    element.href = URL.createObjectURL(blob);
-    element.download = `${file.name}_details.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    URL.revokeObjectURL(element.href);
+    void (async () => {
+      try {
+        if (file.filePath) {
+          const signedUrl = await DocumentService.getSignedUrl(file.filePath);
+          const response = await fetch(signedUrl);
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = objectUrl;
+          anchor.download = file.name;
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+
+        const element = document.createElement('a');
+        const fileContent = `Document: ${file.name}\nType: ${file.type}\nSize: ${formatFileSize(file.size)}\nStatus: ${file.status}\nUpload Time: ${formatTime(file.uploadTime)}${
+          file.extractedData ? `\n\nExtracted Data:\nAmount: ${file.extractedData.amount}\nDate: ${file.extractedData.date}\nVendor: ${file.extractedData.vendor}\nCategory: ${file.extractedData.category}\nTax Deductible: ${file.extractedData.taxDeductible ? 'Yes' : 'No'}\nConfidence: ${file.extractedData.confidence}%` : ''
+        }${
+          file.aiInsights ? `\n\nAI Insights:\n${file.aiInsights.join('\n')}` : ''
+        }`;
+        
+        const blob = new Blob([fileContent], { type: 'text/plain' });
+        element.href = URL.createObjectURL(blob);
+        element.download = `${file.name}_details.txt`;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        URL.revokeObjectURL(element.href);
+      } catch (error) {
+        console.error('Error downloading file:', error);
+        toast.error('Failed to download file');
+      }
+    })();
   };
 
   const editFile = (file: UploadedFile) => {
@@ -290,13 +304,7 @@ const DocumentUpload = () => {
   const deleteFile = async (file: UploadedFile) => {
     if (confirm(`Delete ${file.name}?`)) {
       try {
-        const { error } = await supabase
-          .from('documents')
-          .delete()
-          .eq('id', file.id);
-
-        if (error) throw error;
-
+        await DocumentService.deleteStoredDocument(file.id, file.filePath);
         setUploadedFiles(prev => prev.filter(f => f.id !== file.id));
         toast.success('Document deleted');
       } catch (error) {
@@ -1101,6 +1109,15 @@ const DocumentUpload = () => {
                             </div>
                           ))}
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedFile.textSnippet && (
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Extracted Text Preview</h4>
+                      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 text-sm text-gray-700 whitespace-pre-wrap">
+                        {selectedFile.textSnippet}
                       </div>
                     </div>
                   )}

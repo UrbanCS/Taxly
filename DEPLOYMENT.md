@@ -37,9 +37,15 @@ Before testing auth/data flows:
 2. Run migrations in order:
    - `supabase/migrations/20251022212436_initial_schema.sql`
    - `supabase/migrations/20251027194201_fix_security_and_performance_issues.sql`
+   - `supabase/migrations/20260305193000_create_tax_documents_storage.sql`
 3. Configure **Authentication → URL Configuration**:
    - Site URL: your Netlify production URL
    - Redirect URLs: production URL and local dev URL (`http://localhost:5173`)
+
+## Storage
+The upload flow now uses a private Supabase Storage bucket named `tax-documents`.
+
+If you do not apply the storage migration, document uploads will fail because the bucket and policies will be missing.
 
 ## Verification
 After deployment, verify:
